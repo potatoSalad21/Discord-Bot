@@ -1,5 +1,4 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import dotenv from 'dotenv/config';
 
 import { Client, GatewayIntentBits, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
 import axios from 'axios';
@@ -35,7 +34,7 @@ client.on("interactionCreate", async (interaction) => {
         case "joemama":
             const target = interaction.options.get("target");
 
-            const data = fs.readFileSync("./jokes.json", "utf-8");
+            const data = fs.readFileSync("../jokes.json", "utf-8");
             let jokes = JSON.parse(data);
             let randomJoke = jokes.at(Math.floor(Math.random() * 979));
 
