@@ -1,6 +1,6 @@
 import dotenv from 'dotenv/config';
 
-import { Client, GatewayIntentBits, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder } from 'discord.js';
 import axios from 'axios';
 import fs from "fs";
 
@@ -44,6 +44,49 @@ client.on("interactionCreate", async (interaction) => {
                 interaction.reply(`<@${target.value}>, ${randomJoke}`);
             }
             break;
+        case "weather":
+            const key = "mydMQm3856U8wJArv0M271oYAqiDQrE2";  // weather api key
+
+            const city = interaction.options.get("city").value;
+
+            // getting the city's key
+            const cityLocation = await axios.get("http://dataservice.accuweather.com/locations/v1/cities/search", { params: { apikey: key, q: city } });
+            const cityKey = cityLocation.data[0].Key;
+            
+            const weatherJson = await axios.get(`http://dataservice.accuweather.com/forecasts/v1/daily/5day/${cityKey}`, { params: { apikey: key } });
+            const forecasts = weatherJson.data.DailyForecasts;
+            let weeklyMsg = weatherJson.data.Headline.Text;
+
+            const weatherEmbed = new EmbedBuilder()
+                .setColor(0x8037b7)
+                .setTitle("☀  Weather Report ")
+                .setDescription(`[■]  __${weeklyMsg}__`)
+                .setURL("https://www.youtube.com/watch?v=dQw4w9WgXcQ&pp=ygUJcmljayByb2xs")
+                .setThumbnail("https://download.logo.wine/logo/AccuWeather/AccuWeather-Logo.wine.png")
+                .setTimestamp()
+                .setFooter({ text: "[■]  by Accuweather", iconURL: "https://play-lh.googleusercontent.com/EgDT3XrIaJbhZjINCWsiqjzonzqve7LgAbim8kHXWgg6fZnQebqIWjE6UcGahJ6yugU" });
+            
+            for (let daily of forecasts) {
+                const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                let date = new Date(daily.Date);
+                let day = weekDays[date.getDay()];
+                
+                let dayIcon = daily.Day.IconPhrase;
+                let nightIcon = daily.Night.IconPhrase;
+
+                // Getting temperature and converting to celsius
+                let maxTemp = (daily.Temperature.Maximum.Value - 32) * 5/9;
+                let minTemp = (daily.Temperature.Minimum.Value - 32) * 5/9;
+
+                weatherEmbed
+                    .addFields(
+                        { name: `[-O-] ***__${day}__***`, value: ` :sunrise:  _${dayIcon}_ - **${Math.round(maxTemp)}°C** \n :night_with_stars: _${nightIcon}_ - **${Math.round(minTemp)}°C**` },
+                        { name: " ", value: " " }
+                    )
+            }
+
+            interaction.reply({ embeds: [weatherEmbed] });
+            break;
         case "meme":
             let meme = await getMeme();
 
@@ -60,12 +103,12 @@ client.on("interactionCreate", async (interaction) => {
             const memeButtons = new ActionRowBuilder()
                 .addComponents(cancel, next);
 
-            const response = await interaction.reply({
+            const reply = await interaction.reply({
                 content: meme,
                 components: [memeButtons],
             });
 
-            const collector = response.createMessageComponentCollector();
+            const collector = reply.createMessageComponentCollector();
 
             collector.on("collect", async i => {
                 if (!interaction.isButton) return;

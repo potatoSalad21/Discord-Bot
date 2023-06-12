@@ -1,12 +1,11 @@
 import { REST, Routes, ApplicationCommandOptionType } from 'discord.js';
 
-import dotenv from 'dotenv';
-dotenv.config();
+import dotenv from 'dotenv/config';
 
 const commands = [
     {
         name: "ping",
-        description: "replies with Pong",
+        description: "Replies with Pong",
     },
 
     {
@@ -20,12 +19,25 @@ const commands = [
         options: [
             {
                 name: "target",
-                description: "target of the joke",
+                description: "Target of the Joke",
                 type: ApplicationCommandOptionType.User,
             }
         ],
     },
-]
+
+    {
+        name: "weather",
+        description: "Posts the 5day Weather Forecast for a Specified City.",
+        options: [
+            {
+                name: "city",
+                description: "City to look up",
+                type: ApplicationCommandOptionType.String,
+                required: true,
+            }
+        ],
+    },
+];
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
