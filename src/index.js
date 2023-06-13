@@ -2,6 +2,7 @@ import dotenv from 'dotenv/config';
 
 import { Client, GatewayIntentBits, ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder } from 'discord.js';
 import axios from 'axios';
+import * as cheerio from 'cheerio';
 import fs from "fs";
 
 
@@ -22,7 +23,12 @@ const getMeme = async () => {
     const data = (await axios.get("https://meme-api.com/gimme")).data;
     let meme = data.url;
     return meme;
-}
+};
+
+const getHtml = async (url) => {
+    const { data: html } = await axios.get(url);
+    return html;
+};
 
 client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand) return;
@@ -45,26 +51,26 @@ client.on("interactionCreate", async (interaction) => {
             }
             break;
         case "weather":
-            const key = "mydMQm3856U8wJArv0M271oYAqiDQrE2";  // weather api key
-
             const city = interaction.options.get("city").value;
+            const weatherEmbed = new EmbedBuilder();           
 
-            // getting the city's key
-            const cityLocation = await axios.get("http://dataservice.accuweather.com/locations/v1/cities/search", { params: { apikey: key, q: city } });
-            const cityKey = cityLocation.data[0].Key;
-            
-            const weatherJson = await axios.get(`http://dataservice.accuweather.com/forecasts/v1/daily/5day/${cityKey}`, { params: { apikey: key } });
-            const forecasts = weatherJson.data.DailyForecasts;
-            let weeklyMsg = weatherJson.data.Headline.Text;
+            try {
+                // getting the city's key
+                const cityLocation = await axios.get("http://dataservice.accuweather.com/locations/v1/cities/search", { params: { apikey: process.env.WEATHER_KEY, q: city } });
+                const cityKey = cityLocation.data[0].Key;
 
-            const weatherEmbed = new EmbedBuilder()
-                .setColor(0x8037b7)
-                .setTitle("☀  Weather Report ")
-                .setDescription(`[■]  __${weeklyMsg}__`)
-                .setURL("https://www.youtube.com/watch?v=dQw4w9WgXcQ&pp=ygUJcmljayByb2xs")
-                .setThumbnail("https://download.logo.wine/logo/AccuWeather/AccuWeather-Logo.wine.png")
-                .setTimestamp()
-                .setFooter({ text: "[■]  by Accuweather", iconURL: "https://play-lh.googleusercontent.com/EgDT3XrIaJbhZjINCWsiqjzonzqve7LgAbim8kHXWgg6fZnQebqIWjE6UcGahJ6yugU" });
+                const weatherJson = await axios.get(`http://dataservice.accuweather.com/forecasts/v1/daily/5day/${cityKey}`, { params: { apikey: process.env.WEATHER_KEY } });
+                const forecasts = weatherJson.data.DailyForecasts;
+                let weeklyMsg = weatherJson.data.Headline.Text;
+
+                weatherEmbed
+                    .setColor(0x8037b7)
+                    .setTitle("☀  Weather Report ")
+                    .setDescription(`[■]  __${weeklyMsg}__`)
+                    .setURL("https://www.youtube.com/watch?v=dQw4w9WgXcQ&pp=ygUJcmljayByb2xs")
+                    .setThumbnail("https://download.logo.wine/logo/AccuWeather/AccuWeather-Logo.wine.png")
+                    .setTimestamp()
+                    .setFooter({ text: "[■]  by Accuweather", iconURL: "https://play-lh.googleusercontent.com/EgDT3XrIaJbhZjINCWsiqjzonzqve7LgAbim8kHXWgg6fZnQebqIWjE6UcGahJ6yugU" });
             
             for (let daily of forecasts) {
                 const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -78,14 +84,81 @@ client.on("interactionCreate", async (interaction) => {
                 let maxTemp = (daily.Temperature.Maximum.Value - 32) * 5/9;
                 let minTemp = (daily.Temperature.Minimum.Value - 32) * 5/9;
 
-                weatherEmbed
-                    .addFields(
-                        { name: `[-O-] ***__${day}__***`, value: ` :sunrise:  _${dayIcon}_ - **${Math.round(maxTemp)}°C** \n :night_with_stars: _${nightIcon}_ - **${Math.round(minTemp)}°C**` },
-                        { name: " ", value: " " }
-                    )
+                weatherEmbed.addFields(
+                    { name: `[-O-] ***__${day}__***`, value: ` :sunrise:  _${dayIcon}_ - **${Math.round(maxTemp)}°C** \n :night_with_stars: _${nightIcon}_ - **${Math.round(minTemp)}°C**` },
+                    { name: " ", value: " " }
+                );
+            }
+            } catch (err) {
+                weatherEmbed.setTitle(":bangbang: Location was not found!");
             }
 
             interaction.reply({ embeds: [weatherEmbed] });
+            break;
+        case "define":
+            const phrase = interaction.options.get("phrase").value;
+            const dict = interaction.options.get("dictionary").value;
+
+            const dictEmbed = new EmbedBuilder();
+
+            if (dict === "urban") {
+                const url = `https://www.urbandictionary.com/define.php?term=${phrase}`;
+                
+                try {
+                    const html = await getHtml(url);
+                    
+                    // parsing the html with cheerio
+                    const $ = cheerio.load(html);
+                    const phrasePanel = $(".definition:first");
+                    const definition = phrasePanel.find(".break-words.meaning.mb-4").text();
+                    const example = phrasePanel.find(".break-words.example.italic.mb-4").text();
+    
+                    dictEmbed
+                        .setColor(0x5865F2)
+                        .setTitle(`**${phrase}**`)
+                        .setAuthor({ name: "Urban Dictionary", iconURL: "https://boost.space/wp-content/uploads/2022/06/urban-dictionary.png" })
+                        .setThumbnail("https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Urban_Dictionary_logo.svg/512px-Urban_Dictionary_logo.svg.png?20180302232617")
+                        .addFields(
+                            { name: "Definition:", value: `**__${definition}__**` },
+                            { name: "Example:", value: `**__${example}__**` }
+                        )
+                        .setTimestamp();
+                } catch (err) {
+                    dictEmbed.setTitle(":bangbang: Phrase was not found!");
+                }
+            } else if (dict === "webster") {
+                const url = `https://www.merriam-webster.com/dictionary/${phrase.replace(" ", "%20")}`;
+
+                try {
+                    dictEmbed
+                        .setColor(0x6577E6)
+                        .setTitle(`**${phrase}**`)
+                        .setThumbnail("https://cdn-icons-png.flaticon.com/512/1754/1754168.png")
+                        .setAuthor({ name: "Merriam-Webster", iconURL: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Merriam-Webster_logo.svg/1024px-Merriam-Webster_logo.svg.png" })
+                        .setTimestamp();
+
+                    const html = await getHtml(url);
+
+                    const $ = cheerio.load(html);
+                    $("div.entry-word-section-container").each((i, element) => {
+                        const speechPart = $(element).find("h2 .important-blue-link").text(); 
+                        let definitions = "";
+                        $(".dtText").each((i, element) => {
+                            if (i > 3) return false;
+                
+                            definitions += $(element).text().replace(":", "►") + "\n";
+                        });
+                        
+                        dictEmbed.addFields(
+                            { name: `__${speechPart}__`, value: definitions }
+                        );
+                    });
+                } catch (error) {
+                    dictEmbed.setTitle(":bangbang: Phrase was not found!");
+                }
+            }
+
+            interaction.reply({ embeds: [dictEmbed] });
             break;
         case "meme":
             let meme = await getMeme();
@@ -125,7 +198,6 @@ client.on("interactionCreate", async (interaction) => {
                 }
             });
             break;
-        
     }
 });
 

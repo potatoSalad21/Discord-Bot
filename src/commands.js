@@ -34,7 +34,38 @@ const commands = [
                 description: "City to look up",
                 type: ApplicationCommandOptionType.String,
                 required: true,
-            }
+            },
+        ],
+    },
+
+    {
+        name: "define",
+        description: "Get the definition of a phrase from different dictionaries",
+        options: [
+            {
+                name: "dictionary",
+                description: "Dictionary that will be used for a lookup",
+                type: ApplicationCommandOptionType.String,
+                choices: [
+                    {
+                        name: "merriam-webster",
+                        value: "webster",
+                    },
+
+                    {
+                        name: "urban-dictionary",
+                        value: "urban",
+                    },
+                ],
+                required: true,
+            },
+
+            {
+                name: "phrase",
+                description: "A phrase to define",
+                type: ApplicationCommandOptionType.String,
+                required: true,
+            },
         ],
     },
 ];
