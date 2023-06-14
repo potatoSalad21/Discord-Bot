@@ -39,6 +39,16 @@ const commands = [
     },
 
     {
+        name: "join",
+        description: "Joins your Voice Channel",
+    },
+    
+    {
+        name: "leave",
+        description: "Leaves the VC (if it's connected to it)",
+    },
+
+    {
         name: "define",
         description: "Get the definition of a phrase from different dictionaries",
         options: [

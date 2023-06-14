@@ -1,6 +1,7 @@
 import dotenv from 'dotenv/config';
 
 import { Client, GatewayIntentBits, ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder } from 'discord.js';
+import { joinVoiceChannel, getVoiceConnection, VoiceConnectionStatus, entersState } from '@discordjs/voice';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import fs from "fs";
@@ -12,6 +13,7 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates,
     ]
 });
 
@@ -30,7 +32,7 @@ const getHtml = async (url) => {
     return html;
 };
 
-client.on("interactionCreate", async (interaction) => {
+client.on("interactionCreate", async (interaction) => { 
     if (!interaction.isChatInputCommand) return;
 
     switch (interaction.commandName) {
@@ -49,6 +51,41 @@ client.on("interactionCreate", async (interaction) => {
             } else {
                 interaction.reply(`<@${target.value}>, ${randomJoke}`);
             }
+            break;
+        case "join":
+            if (!interaction.member.voice.channelId) {
+                interaction.reply(":bangbang: You're not Connected to a VC.");
+            }
+
+            const connection = joinVoiceChannel({
+                channelId: interaction.member.voice.channelId,
+                guildId: interaction.guildId,
+                adapterCreator: interaction.guild.voiceAdapterCreator,
+            });
+
+            connection.on(VoiceConnectionStatus.Ready, () => {
+                interaction.reply("yeehaw! all ready");
+            });
+            
+            connection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
+                try {
+                    await Promise.race([
+                        entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
+                        entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+                    ]);
+                } catch (err) {
+                    connection.destroy();
+                }
+            });
+
+            break;
+        case "leave":
+            try {
+                getVoiceConnection(interaction.guildId).destroy();
+            } catch (err) {
+                interaction.reply(":bangbang: Bot is Not Connected to a VC.");
+            }
+            
             break;
         case "weather":
             const city = interaction.options.get("city").value;
