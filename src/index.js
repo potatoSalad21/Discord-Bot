@@ -1,10 +1,11 @@
 import dotenv from 'dotenv/config';
 
-import { Client, GatewayIntentBits, ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder } from 'discord.js';
-import { joinVoiceChannel, getVoiceConnection, VoiceConnectionStatus, entersState } from '@discordjs/voice';
+import { Client, GatewayIntentBits, ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder, AttachmentBuilder } from 'discord.js';
+import { joinVoiceChannel, getVoiceConnection, VoiceConnectionStatus, entersState, createAudioPlayer, AudioPlayerStatus, createAudioResource, NoSubscriberBehavior, StreamType } from '@discordjs/voice';
+import Canvas from "@napi-rs/canvas";
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import fs from "fs";
+import fs, { createReadStream } from "fs";
 
 
 const client = new Client({
@@ -17,13 +18,18 @@ const client = new Client({
     ]
 });
 
-client.on("ready", async (c) => {
+client.once("ready", async () => {
     console.log("The bot hath awakened..");
 });
 
 const getMeme = async () => {
-    const data = (await axios.get("https://meme-api.com/gimme")).data;
-    let meme = data.url;
+    let meme;
+    try {
+        const data = (await axios.get("https://meme-api.com/gimme")).data;
+        meme = data.url;
+    } catch (err) {
+        meme = ":bangbang: [API Error] Couldn't get the meme.";
+    }
     return meme;
 };
 
@@ -52,29 +58,48 @@ client.on("interactionCreate", async (interaction) => {
                 interaction.reply(`<@${target.value}>, ${randomJoke}`);
             }
             break;
+        case "caption":
+            const image = interaction.options.get("image").attachment.url;
+
+            // creating Canvas
+            const canvas = Canvas.createCanvas(500, 400);
+            const context = canvas.getContext("2d");
+
+            const background = await Canvas.loadImage(image); 
+            context.drawImage(background, 0, 100, canvas.width, canvas.height - 100); // drawing the inputted image
+
+            context.fillStyle = "white";
+            context.fillRect(0, 0, canvas.width, 100);
+
+            // converting canvas to png
+            const attachment = new AttachmentBuilder(await canvas.encode("png"), { name: "image.png" }); 
+
+            interaction.reply({ files: [attachment] });
+
+            break;
         case "join":
             if (!interaction.member.voice.channelId) {
                 interaction.reply(":bangbang: You're not Connected to a VC.");
             }
 
-            const connection = joinVoiceChannel({
+            const voiceConnection = joinVoiceChannel({
                 channelId: interaction.member.voice.channelId,
                 guildId: interaction.guildId,
                 adapterCreator: interaction.guild.voiceAdapterCreator,
             });
 
-            connection.on(VoiceConnectionStatus.Ready, () => {
-                interaction.reply("yeehaw! all ready");
+            voiceConnection.on(VoiceConnectionStatus.Ready, () => {
+                interaction.reply("all ready!");
             });
             
-            connection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
+            voiceConnection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
                 try {
                     await Promise.race([
-                        entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
-                        entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+                        entersState(voiceConnection, VoiceConnectionStatus.Signalling, 5_000),
+                        entersState(voiceConnection, VoiceConnectionStatus.Connecting, 5_000),
                     ]);
                 } catch (err) {
-                    connection.destroy();
+                    voiceConnection.destroy();
                 }
             });
 
@@ -82,6 +107,7 @@ client.on("interactionCreate", async (interaction) => {
         case "leave":
             try {
                 getVoiceConnection(interaction.guildId).destroy();
+                interaction.reply("*fades*");
             } catch (err) {
                 interaction.reply(":bangbang: Bot is Not Connected to a VC.");
             }

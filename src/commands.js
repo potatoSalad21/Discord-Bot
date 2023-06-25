@@ -37,6 +37,26 @@ const commands = [
             },
         ],
     },
+    
+    {
+        name: "caption",
+        description: "Puts the Specified Caption Above the Image",
+        options: [
+            {
+                name: "image",
+                description: "Image to caption",
+                type: ApplicationCommandOptionType.Attachment,
+                required: true,
+            },
+
+            {
+                name: "caption",
+                description: "Caption to use",
+                type: ApplicationCommandOptionType.String,
+                required: true,
+            },
+        ],
+    },
 
     {
         name: "join",
