@@ -60,6 +60,7 @@ client.on("interactionCreate", async (interaction) => {
             break;
         case "caption":
             const image = interaction.options.get("image").attachment.url;
+            const text = interaction.options.get("caption").value;
 
             // creating Canvas
             const canvas = Canvas.createCanvas(500, 400);
@@ -70,6 +71,10 @@ client.on("interactionCreate", async (interaction) => {
 
             context.fillStyle = "white";
             context.fillRect(0, 0, canvas.width, 100);
+
+            context.font = "60px sans-serif";
+            context.fillStyle = "#000000";
+            context.fillText(text, canvas.width / 2, 50);
 
             // converting canvas to png
             const attachment = new AttachmentBuilder(await canvas.encode("png"), { name: "image.png" }); 
