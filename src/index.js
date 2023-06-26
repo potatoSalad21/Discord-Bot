@@ -59,27 +59,36 @@ client.on("interactionCreate", async (interaction) => {
             }
             break;
         case "caption":
-            const image = interaction.options.get("image").attachment.url;
+            const userImg = interaction.options.get("image").attachment;
             const text = interaction.options.get("caption").value;
 
+            const canvasWidth = userImg.width;
+            const canvasHeight = userImg.height;
+
+            const rectHeight = 200;
+
             // creating Canvas
-            const canvas = Canvas.createCanvas(500, 400);
-            const context = canvas.getContext("2d");
+            const canvas = Canvas.createCanvas(canvasWidth, canvasHeight);
+            const ctx = canvas.getContext("2d");
 
-            const background = await Canvas.loadImage(image); 
-            context.drawImage(background, 0, 100, canvas.width, canvas.height - 100); // drawing the inputted image
+            const background = await Canvas.loadImage(userImg.url); 
+            ctx.drawImage(background, 0, rectHeight, canvas.width, canvas.height - rectHeight);     // drawing the inputted image
 
-            context.fillStyle = "white";
-            context.fillRect(0, 0, canvas.width, 100);
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, rectHeight);
 
-            context.font = "60px sans-serif";
-            context.fillStyle = "#000000";
-            context.fillText(text, canvas.width / 2, 50);
+            // setting text properties
+            ctx.fillStyle = "black";
+            ctx.font = "60px Impact";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            ctx.fillText(text, canvas.width / 2, rectHeight / 2); // drawing text in the center of a rectangle
 
             // converting canvas to png
-            const attachment = new AttachmentBuilder(await canvas.encode("png"), { name: "image.png" }); 
+            const captionedImg = new AttachmentBuilder(await canvas.encode("png"), { name: "image.png" }); 
 
-            interaction.reply({ files: [attachment] });
+            interaction.reply({ files: [captionedImg] });
 
             break;
         case "join":
