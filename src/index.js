@@ -65,19 +65,19 @@ client.on("interactionCreate", async (interaction) => {
             // setting sizes
             const canvasWidth = userImg.width;
             const canvasHeight = userImg.height;
-            const rectHeight = canvasHeight / 6;
+            const rectHeight = canvasHeight / 4;
 
             const canvas = Canvas.createCanvas(canvasWidth, canvasHeight);
             const ctx = canvas.getContext("2d");
 
-            const background = await Canvas.loadImage(userImg.url); 
+            const background = await Canvas.loadImage(userImg.url);
             ctx.drawImage(background, 0, rectHeight, canvas.width, canvas.height - rectHeight);
 
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, rectHeight);
 
             // setting text properties
-            let fontSize = 42;
+            let fontSize = rectHeight / 2;
             ctx.fillStyle = "black";
             ctx.font = `${fontSize}px Impact`;
             ctx.textAlign = "center";
@@ -134,7 +134,7 @@ client.on("interactionCreate", async (interaction) => {
             } catch (err) {
                 interaction.reply(":bangbang: Bot is Not Connected to a VC.");
             }
-            
+
             break;
         case "weather":
             const city = interaction.options.get("city").value;
@@ -180,6 +180,7 @@ client.on("interactionCreate", async (interaction) => {
             }
 
             interaction.reply({ embeds: [weatherEmbed] });
+
             break;
         case "define":
             const phrase = interaction.options.get("phrase").value;
@@ -245,6 +246,7 @@ client.on("interactionCreate", async (interaction) => {
             }
 
             interaction.reply({ embeds: [dictEmbed] });
+
             break;
         case "meme":
             let meme = await getMeme();
@@ -283,6 +285,7 @@ client.on("interactionCreate", async (interaction) => {
                     await interaction.deleteReply();
                 }
             });
+            
             break;
     }
 });
