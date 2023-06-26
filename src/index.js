@@ -1,11 +1,11 @@
 import dotenv from 'dotenv/config';
 
 import { Client, GatewayIntentBits, ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder, AttachmentBuilder } from 'discord.js';
-import { joinVoiceChannel, getVoiceConnection, VoiceConnectionStatus, entersState, createAudioPlayer, AudioPlayerStatus, createAudioResource, NoSubscriberBehavior, StreamType } from '@discordjs/voice';
-import Canvas from "@napi-rs/canvas";
+import { joinVoiceChannel, getVoiceConnection, VoiceConnectionStatus, entersState } from '@discordjs/voice';
+import Canvas from '@napi-rs/canvas';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import fs, { createReadStream } from "fs";
+import fs from 'fs';
 
 
 const client = new Client({
@@ -285,7 +285,7 @@ client.on("interactionCreate", async (interaction) => {
                     await interaction.deleteReply();
                 }
             });
-            
+
             break;
     }
 });
