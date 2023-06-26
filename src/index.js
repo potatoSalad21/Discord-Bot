@@ -62,30 +62,39 @@ client.on("interactionCreate", async (interaction) => {
             const userImg = interaction.options.get("image").attachment;
             const text = interaction.options.get("caption").value;
 
+            // setting sizes
             const canvasWidth = userImg.width;
             const canvasHeight = userImg.height;
+            const rectHeight = canvasHeight / 6;
 
-            const rectHeight = 200;
-
-            // creating Canvas
             const canvas = Canvas.createCanvas(canvasWidth, canvasHeight);
             const ctx = canvas.getContext("2d");
 
             const background = await Canvas.loadImage(userImg.url); 
-            ctx.drawImage(background, 0, rectHeight, canvas.width, canvas.height - rectHeight);     // drawing the inputted image
+            ctx.drawImage(background, 0, rectHeight, canvas.width, canvas.height - rectHeight);
 
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, rectHeight);
 
             // setting text properties
+            let fontSize = 42;
             ctx.fillStyle = "black";
-            ctx.font = "60px Impact";
+            ctx.font = `${fontSize}px Impact`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
 
-            ctx.fillText(text, canvas.width / 2, rectHeight / 2); // drawing text in the center of a rectangle
+            const textWidth = ctx.measureText(text).width;
 
-            // converting canvas to png
+            if (textWidth > canvas.width) {
+                const scaleFactor = canvas.width / textWidth;
+
+                // updating font size
+                fontSize *= scaleFactor;
+                ctx.font = `${fontSize}px Impact`;
+            }
+
+            ctx.fillText(text, canvas.width / 2, rectHeight / 2);
+            
             const captionedImg = new AttachmentBuilder(await canvas.encode("png"), { name: "image.png" }); 
 
             interaction.reply({ files: [captionedImg] });
