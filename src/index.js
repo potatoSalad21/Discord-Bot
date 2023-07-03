@@ -1,12 +1,24 @@
-import dotenv from 'dotenv/config';
+import dotenv from "dotenv/config";
 
-import { Client, GatewayIntentBits, ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder, AttachmentBuilder } from 'discord.js';
-import { joinVoiceChannel, getVoiceConnection, VoiceConnectionStatus, entersState } from '@discordjs/voice';
-import Canvas from '@napi-rs/canvas';
-import axios from 'axios';
-import * as cheerio from 'cheerio';
-import fs from 'fs';
-
+import {
+    Client,
+    GatewayIntentBits,
+    ButtonBuilder,
+    ButtonStyle,
+    ActionRowBuilder,
+    EmbedBuilder,
+    AttachmentBuilder,
+} from "discord.js";
+import {
+    joinVoiceChannel,
+    getVoiceConnection,
+    VoiceConnectionStatus,
+    entersState,
+} from "@discordjs/voice";
+import Canvas from "@napi-rs/canvas";
+import axios from "axios";
+import * as cheerio from "cheerio";
+import fs from "fs";
 
 const client = new Client({
     intents: [
@@ -38,7 +50,7 @@ const getHtml = async (url) => {
     return html;
 };
 
-client.on("interactionCreate", async (interaction) => { 
+client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand) return;
 
     switch (interaction.commandName) {
@@ -94,8 +106,11 @@ client.on("interactionCreate", async (interaction) => {
             }
 
             ctx.fillText(text, canvas.width / 2, rectHeight / 2);
-            
-            const captionedImg = new AttachmentBuilder(await canvas.encode("png"), { name: "image.png" }); 
+
+            const captionedImg = new AttachmentBuilder(
+                await canvas.encode("png"),
+                { name: "image.png" }
+            );
 
             interaction.reply({ files: [captionedImg] });
 
@@ -138,14 +153,20 @@ client.on("interactionCreate", async (interaction) => {
             break;
         case "weather":
             const city = interaction.options.get("city").value;
-            const weatherEmbed = new EmbedBuilder();           
+            const weatherEmbed = new EmbedBuilder();
 
             try {
                 // getting the city's key
-                const cityLocation = await axios.get("http://dataservice.accuweather.com/locations/v1/cities/search", { params: { apikey: process.env.WEATHER_KEY, q: city } });
+                const cityLocation = await axios.get(
+                    "http://dataservice.accuweather.com/locations/v1/cities/search",
+                    { params: { apikey: process.env.WEATHER_KEY, q: city } }
+                );
                 const cityKey = cityLocation.data[0].Key;
 
-                const weatherJson = await axios.get(`http://dataservice.accuweather.com/forecasts/v1/daily/5day/${cityKey}`, { params: { apikey: process.env.WEATHER_KEY } });
+                const weatherJson = await axios.get(
+                    `http://dataservice.accuweather.com/forecasts/v1/daily/5day/${cityKey}`,
+                    { params: { apikey: process.env.WEATHER_KEY } }
+                );
                 const forecasts = weatherJson.data.DailyForecasts;
                 let weeklyMsg = weatherJson.data.Headline.Text;
 
@@ -156,22 +177,37 @@ client.on("interactionCreate", async (interaction) => {
                     .setURL("https://www.youtube.com/watch?v=dQw4w9WgXcQ&pp=ygUJcmljayByb2xs")
                     .setThumbnail("https://download.logo.wine/logo/AccuWeather/AccuWeather-Logo.wine.png")
                     .setTimestamp()
-                    .setFooter({ text: "[■]  by Accuweather", iconURL: "https://play-lh.googleusercontent.com/EgDT3XrIaJbhZjINCWsiqjzonzqve7LgAbim8kHXWgg6fZnQebqIWjE6UcGahJ6yugU" });
-            
-            for (let daily of forecasts) {
-                const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                let date = new Date(daily.Date);
-                let day = weekDays[date.getDay()];
-                
-                let dayIcon = daily.Day.IconPhrase;
-                let nightIcon = daily.Night.IconPhrase;
+                    .setFooter({
+                        text: "[■]  by Accuweather",
+                        iconURL:
+                            "https://play-lh.googleusercontent.com/EgDT3XrIaJbhZjINCWsiqjzonzqve7LgAbim8kHXWgg6fZnQebqIWjE6UcGahJ6yugU",
+                    });
+
+                for (let daily of forecasts) {
+                    const weekDays = [
+                        "Sunday",
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                        "Saturday",
+                    ];
+                    let date = new Date(daily.Date);
+                    let day = weekDays[date.getDay()];
+
+                    let dayIcon = daily.Day.IconPhrase;
+                    let nightIcon = daily.Night.IconPhrase;
 
                 // Getting temperature and converting to celsius
-                let maxTemp = (daily.Temperature.Maximum.Value - 32) * 5/9;
-                let minTemp = (daily.Temperature.Minimum.Value - 32) * 5/9;
+                let maxTemp = (daily.Temperature.Maximum.Value - 32) * 5 / 9;
+                let minTemp = (daily.Temperature.Minimum.Value - 32) * 5 / 9;
 
                 weatherEmbed.addFields(
-                    { name: `[-O-] ***__${day}__***`, value: ` :sunrise:  _${dayIcon}_ - **${Math.round(maxTemp)}°C** \n :night_with_stars: _${nightIcon}_ - **${Math.round(minTemp)}°C**` },
+                    { 
+                        name: `[-O-] ***__${day}__***`,
+                        value: ` :sunrise:  _${dayIcon}_ - **${Math.round(maxTemp)}°C** \n :night_with_stars: _${nightIcon}_ - **${Math.round(minTemp)}°C**` 
+                    },
                     { name: " ", value: " " }
                 );
             }
@@ -190,21 +226,30 @@ client.on("interactionCreate", async (interaction) => {
 
             if (dict === "urban") {
                 const url = `https://www.urbandictionary.com/define.php?term=${phrase}`;
-                
+
                 try {
                     const html = await getHtml(url);
-                    
+
                     // parsing the html with cheerio
                     const $ = cheerio.load(html);
                     const phrasePanel = $(".definition:first");
-                    const definition = phrasePanel.find(".break-words.meaning.mb-4").text();
-                    const example = phrasePanel.find(".break-words.example.italic.mb-4").text();
-    
+                    const definition = phrasePanel
+                        .find(".break-words.meaning.mb-4")
+                        .text();
+                    const example = phrasePanel
+                        .find(".break-words.example.italic.mb-4")
+                        .text();
+
                     dictEmbed
-                        .setColor(0x5865F2)
+                        .setColor(0x5865f2)
                         .setTitle(`**${phrase}**`)
-                        .setAuthor({ name: "Urban Dictionary", iconURL: "https://boost.space/wp-content/uploads/2022/06/urban-dictionary.png" })
-                        .setThumbnail("https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Urban_Dictionary_logo.svg/512px-Urban_Dictionary_logo.svg.png?20180302232617")
+                        .setAuthor({
+                            name: "Urban Dictionary",
+                            iconURL: "https://boost.space/wp-content/uploads/2022/06/urban-dictionary.png",
+                        })
+                        .setThumbnail(
+                            "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Urban_Dictionary_logo.svg/512px-Urban_Dictionary_logo.svg.png?20180302232617"
+                        )
                         .addFields(
                             { name: "Definition:", value: `**__${definition}__**` },
                             { name: "Example:", value: `**__${example}__**` }
@@ -218,10 +263,14 @@ client.on("interactionCreate", async (interaction) => {
 
                 try {
                     dictEmbed
-                        .setColor(0x6577E6)
+                        .setColor(0x6577e6)
                         .setTitle(`**${phrase}**`)
                         .setThumbnail("https://cdn-icons-png.flaticon.com/512/1754/1754168.png")
-                        .setAuthor({ name: "Merriam-Webster", iconURL: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Merriam-Webster_logo.svg/1024px-Merriam-Webster_logo.svg.png" })
+                        .setAuthor({
+                            name: "Merriam-Webster",
+                            iconURL:
+                                "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Merriam-Webster_logo.svg/1024px-Merriam-Webster_logo.svg.png",
+                        })
                         .setTimestamp();
 
                     const html = await getHtml(url);
@@ -271,15 +320,15 @@ client.on("interactionCreate", async (interaction) => {
 
             const collector = reply.createMessageComponentCollector();
 
-            collector.on("collect", async i => {
+            collector.on("collect", async (i) => {
                 if (!interaction.isButton) return;
 
                 if (i.customId === "next") {
                     meme = await getMeme();
-        
-                    await i.update({ 
-                        content: meme, 
-                        components: [memeButtons] 
+
+                    await i.update({
+                        content: meme,
+                        components: [memeButtons],
                     });
                 } else if (i.customId === "cancel") {
                     await interaction.deleteReply();
