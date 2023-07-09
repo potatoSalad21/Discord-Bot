@@ -199,17 +199,17 @@ client.on("interactionCreate", async (interaction) => {
                     let dayIcon = daily.Day.IconPhrase;
                     let nightIcon = daily.Night.IconPhrase;
 
-                // Getting temperature and converting to celsius
-                let maxTemp = (daily.Temperature.Maximum.Value - 32) * 5 / 9;
-                let minTemp = (daily.Temperature.Minimum.Value - 32) * 5 / 9;
+                    // Getting temperature and converting to celsius
+                    let maxTemp = (daily.Temperature.Maximum.Value - 32) * 5 / 9;
+                    let minTemp = (daily.Temperature.Minimum.Value - 32) * 5 / 9;
 
-                weatherEmbed.addFields(
-                    { 
-                        name: `[-O-] ***__${day}__***`,
-                        value: ` :sunrise:  _${dayIcon}_ - **${Math.round(maxTemp)}°C** \n :night_with_stars: _${nightIcon}_ - **${Math.round(minTemp)}°C**` 
-                    },
-                    { name: " ", value: " " }
-                );
+                    weatherEmbed.addFields(
+                        { 
+                            name: `[-O-] ***__${day}__***`,
+                            value: ` :sunrise:  _${dayIcon}_ - **${Math.round(maxTemp)}°C** \n :night_with_stars: _${nightIcon}_ - **${Math.round(minTemp)}°C**` 
+                        },
+                        { name: " ", value: " " }
+                    );
             }
             } catch (err) {
                 weatherEmbed.setTitle(":bangbang: Location was not found!");
